@@ -1,0 +1,83 @@
+用例类型: ApiCase
+用例标题: 对话补全 - 流式
+一级模块: 推理接口
+二级模块: 对话补全
+用例步骤:
+  - 发起对话请求:
+      操作类型: 发送请求POST
+      请求地址: /api/chat
+      请求数据:
+        model: "{{TEST_MODEL}}"
+        messages:
+          - role: user
+            content: Hello
+        stream: true
+      请求头:
+        Accept: text/event-stream
+      流式: true
+  - 断言状态码:
+      操作类型: 断言状态码
+      预期结果: 200
+---
+用例类型: ApiCase
+用例标题: 对话补全 - 非流式
+一级模块: 推理接口
+二级模块: 对话补全
+用例步骤:
+  - 发起对话请求:
+      操作类型: 发送请求POST
+      请求地址: /api/chat
+      请求数据:
+        model: "{{TEST_MODEL}}"
+        messages:
+          - role: user
+            content: What is 1+1?
+        stream: false
+  - 断言状态码:
+      操作类型: 断言状态码
+      预期结果: 200
+---
+用例类型: ApiCase
+用例标题: 文本生成
+一级模块: 推理接口
+二级模块: 文本生成
+用例步骤:
+  - 发起生成请求:
+      操作类型: 发送请求POST
+      请求地址: /api/generate
+      请求数据:
+        model: "{{TEST_MODEL}}"
+        prompt: Write a haiku about AI
+        stream: false
+  - 断言状态码:
+      操作类型: 断言状态码
+      预期结果: 200
+---
+用例类型: ApiCase
+用例标题: OpenAI兼容 - 对话补全
+一级模块: OpenAI兼容接口
+二级模块: 对话补全
+用例步骤:
+  - 发起OpenAI对话请求:
+      操作类型: 发送请求POST
+      请求地址: /v1/chat/completions
+      请求数据:
+        model: "{{TEST_MODEL}}"
+        messages:
+          - role: user
+            content: Hello
+  - 断言状态码:
+      操作类型: 断言状态码
+      预期结果: 200
+---
+用例类型: ApiCase
+用例标题: OpenAI兼容 - 模型列表
+一级模块: OpenAI兼容接口
+二级模块: 模型列表
+用例步骤:
+  - 获取模型列表:
+      操作类型: 发送请求GET
+      请求地址: /v1/models
+  - 断言状态码:
+      操作类型: 断言状态码
+      预期结果: 200

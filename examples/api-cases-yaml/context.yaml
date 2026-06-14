@@ -1,0 +1,29 @@
+# ─────────────────────────────────────────────────
+# CSGHub Lite - 全局配置文件
+# 所有用例共享的基础配置
+# ─────────────────────────────────────────────────
+
+# 基础 URL（被测服务地址）
+URL: http://localhost:11435
+
+# 请求超时时间（秒）
+TIMEOUT: 30
+
+# Session 复用开关：true = 所有用例复用同一个 Session（保持 Cookie）
+# false = 每条用例使用独立 Session
+session_reuse: true
+
+# 自定义关键字目录路径
+key_dir: ./HAT/key_dir
+
+# 默认测试模型
+TEST_MODEL: Qwen/Qwen3-0.6B-GGUF
+
+# 数据库配置（可选，当前用例不依赖数据库，仅作框架演示保留）
+#_数据库:
+#  示例数据库:
+#    host: 127.0.0.1
+#    port: 3306
+#    user: root
+#    password: password
+#    db: test_db
