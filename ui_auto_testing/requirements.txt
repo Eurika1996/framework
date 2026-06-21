@@ -1,0 +1,20 @@
+# HAT 框架依赖包
+# 执行: pip install -r requirements.txt
+
+# 核心: pytest + 浏览器自动化
+pytest>=7.0.0
+selenium>=4.10.0
+
+# 用例文件格式支持
+pyyaml>=6.0
+openpyxl>=3.1.0
+
+# 报告与日志
+allure-pytest>=2.13.0
+jinja2>=3.1.0
+
+# 可选: 验证码识别 (仅在用例中需要时使用)
+# ddddocr>=1.4.0
+
+# 可选: MySQL 数据提取 (仅在用例中需要时使用)
+# pymysql>=1.0.0
