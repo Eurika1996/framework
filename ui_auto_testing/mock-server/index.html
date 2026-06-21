@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSGClaw - 个人 AI 团队</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f5f7; color: #1d1d1f; display: flex; min-height: 100vh; }
+
+  /* Sidebar Navigation */
+  .sidebar { width: 220px; background: #fff; border-right: 1px solid #e5e5e7; padding: 20px 0; flex-shrink: 0; }
+  .logo { padding: 0 20px 20px; font-size: 20px; font-weight: 700; color: #0071e3; }
+  nav[role="navigation"] { display: flex; flex-direction: column; gap: 4px; }
+  nav[role="navigation"] a { display: block; padding: 10px 20px; color: #1d1d1f; text-decoration: none; border-radius: 6px; font-size: 14px; transition: background 0.15s; }
+  nav[role="navigation"] a:hover { background: #f5f5f7; }
+  nav[role="navigation"] a.active { background: #e8f1ff; color: #0071e3; font-weight: 500; }
+
+  /* Main Content */
+  .main { flex: 1; padding: 30px 40px; overflow-y: auto; }
+  h1 { font-size: 28px; font-weight: 600; margin-bottom: 8px; }
+  .subtitle { color: #86868b; font-size: 14px; margin-bottom: 24px; }
+
+  /* Page Panels */
+  .panel { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: none; }
+  .panel.active { display: block; }
+
+  /* Buttons */
+  .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.15s; }
+  .btn-primary { background: #0071e3; color: #fff; }
+  .btn-primary:hover { background: #0077ed; }
+  .btn-secondary { background: #f5f5f7; color: #1d1d1f; border: 1px solid #d2d2d7; }
+  .btn-secondary:hover { background: #e8e8ed; }
+  .btn-danger { background: #ff3b30; color: #fff; }
+  .btn-danger:hover { background: #e0352b; }
+  .btn-create { background: #0071e3; color: #fff; padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; }
+
+  /* Form */
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: #1d1d1f; }
+  .form-group input, .form-group textarea { width: 100%; padding: 8px 12px; border: 1px solid #d2d2d7; border-radius: 6px; font-size: 14px; font-family: inherit; }
+  .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #0071e3; }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+
+  /* Lists */
+  .list-section { margin-bottom: 20px; }
+  .list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .list-title { font-size: 16px; font-weight: 600; }
+  .list-container[role="list"] { display: flex; flex-direction: column; gap: 12px; }
+  .list-item[role="listitem"] { background: #f5f5f7; padding: 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .list-item:hover { background: #eeeff2; }
+  .item-name { font-weight: 500; font-size: 14px; }
+  .item-desc { font-size: 12px; color: #86868b; margin-top: 4px; }
+  .item-actions { display: flex; gap: 8px; }
+  .action-btn { padding: 4px 10px; font-size: 12px; border: 1px solid #d2d2d7; background: #fff; border-radius: 4px; cursor: pointer; }
+  .action-btn:hover { background: #f5f5f7; }
+  .action-btn.delete { border-color: #ff3b30; color: #ff3b30; }
+
+  /* Detail Panel */
+  .detail-pane { background: #fafafa; border: 1px solid #e5e5e7; border-radius: 8px; padding: 16px; margin-top: 16px; }
+  .detail-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+  .detail-meta { font-size: 13px; color: #86868b; line-height: 1.6; }
+
+  /* Empty State */
+  .empty-state { text-align: center; padding: 40px; color: #86868b; font-size: 14px; }
+
+  /* Conversation Panel */
+  .message-list[role="log"] { background: #f5f5f7; border-radius: 8px; padding: 16px; min-height: 300px; max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+  .message-item[role="article"] { padding: 12px 16px; border-radius: 12px; max-width: 80%; font-size: 14px; line-height: 1.5; }
+  .user-message { background: #0071e3; color: #fff; align-self: flex-end; }
+  .agent-message { background: #fff; border: 1px solid #e5e5e7; color: #1d1d1f; align-self: flex-start; }
+  .input-area { display: flex; gap: 8px; }
+  .input-area textarea { flex: 1; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 14px; font-family: inherit; resize: none; min-height: 40px; }
+  .send-btn { padding: 0 20px; background: #0071e3; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; }
+
+  /* Status */
+  .status-pill[role="status"] { display: inline-block; padding: 4px 10px; background: #34c759; color: #fff; border-radius: 12px; font-size: 12px; }
+  .workspace-path { font-family: monospace; background: #f5f5f7; padding: 4px 8px; border-radius: 4px; font-size: 13px; }
+
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 1000; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #fff; border-radius: 12px; padding: 24px; min-width: 400px; max-width: 500px; }
+  .modal-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+  .modal-body { font-size: 14px; color: #1d1d1f; margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* Typing indicator */
+  .typing-indicator { font-size: 13px; color: #86868b; font-style: italic; padding: 8px 0; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar Navigation -->
+<aside class="sidebar">
+  <div class="logo">⚡ CSGClaw</div>
+  <nav role="navigation">
+    <a href="#/agents" data-panel="agents" class="active">智能体 / Agents</a>
+    <a href="#/chat" data-panel="chat">对话 / Chat</a>
+    <a href="#/rooms" data-panel="rooms">房间 / Rooms</a>
+    <a href="#/hubs" data-panel="hubs">Hub 管理</a>
+    <a href="#/computer" data-panel="computer">计算机工作区</a>
+    <a href="#/humans" data-panel="humans">用户管理</a>
+  </nav>
+</aside>
+
+<!-- Main Content -->
+<main class="main">
+
+  <!-- ============ Agent Panel ============ -->
+  <section id="panel-agents" class="panel active" data-testid="agent-list-wrapper">
+    <h1>智能体管理</h1>
+    <p class="subtitle">管理你的 AI 智能体团队</p>
+
+    <div class="list-section">
+      <div class="list-header">
+        <div class="list-title">Agent 列表</div>
+        <button class="btn-create" id="agent-create-btn" onclick="showAgentCreate()">+ 新建智能体</button>
+      </div>
+      <div class="list-container agent-list" role="list" data-testid="agent-list">
+        <div class="list-item agent-item" role="listitem" data-id="agent-1">
+          <div>
+            <div class="item-name">默认助手</div>
+            <div class="item-desc">通用型 AI 助手，支持多轮对话</div>
+          </div>
+          <div class="item-actions">
+            <button class="action-btn edit-btn" aria-label="编辑" onclick="viewAgent('agent-1')">查看</button>
+            <button class="action-btn delete delete-btn" aria-label="删除" onclick="confirmDelete('agent-1')">删除</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="agent-create-form" style="display:none; margin-top:24px;">
+      <div class="list-title" style="margin-bottom:16px;">创建新智能体</div>
+      <div class="form-group">
+        <label>名称</label>
+        <input name="name" placeholder="请输入智能体名称" />
+      </div>
+      <div class="form-group">
+        <label>描述</label>
+        <textarea name="description" placeholder="请输入智能体描述"></textarea>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-primary" onclick="createAgent()">保存</button>
+        <button class="btn btn-secondary" onclick="hideAgentCreate()">取消</button>
+      </div>
+    </div>
+
+    <div id="agent-detail" class="detail-pane" data-testid="agent-detail" style="display:none;">
+      <div class="detail-title">智能体详情</div>
+      <div class="detail-meta" id="agent-detail-content"></div>
+    </div>
+  </section>
+
+  <!-- ============ Chat Panel ============ -->
+  <section id="panel-chat" class="panel">
+    <h1>对话窗口</h1>
+    <p class="subtitle">与 AI 智能体实时交流</p>
+
+    <div style="display:flex; gap:8px; margin-bottom:16px;">
+      <button class="btn-create" onclick="createNewRoom()">+ 新建对话</button>
+    </div>
+
+    <div class="message-list" role="log" data-testid="message-list">
+      <div class="message-item agent-message" role="article" data-testid="agent-message">
+                你好！我是 AI 助手，有什么可以帮助你的？
+      </div>
+    </div>
+
+    <div class="input-area">
+      <textarea name="message" placeholder="输入消息..." rows="1"></textarea>
+      <button class="send-btn" aria-label="发送" onclick="sendMessage()">发送</button>
+    </div>
+
+    <div class="typing-indicator" id="typing-indicator" style="display:none;">正在思考...</div>
+  </section>
+
+  <!-- ============ Rooms Panel ============ -->
+  <section id="panel-rooms" class="panel">
+    <h1>房间管理</h1>
+    <p class="subtitle">管理协作房间</p>
+
+    <div class="list-section">
+      <div class="list-header">
+        <div class="list-title">房间列表</div>
+        <button class="btn-create" onclick="showRoomCreate()">+ 新建房间</button>
+      </div>
+      <div class="list-container room-list" role="list" data-testid="room-list">
+        <div class="list-item room-item" role="listitem" data-id="room-1">
+          <div>
+            <div class="item-name">默认房间</div>
+            <div class="item-desc">系统默认协作房间</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="room-create-form" style="display:none; margin-top:24px;">
+      <div class="list-title" style="margin-bottom:16px;">创建新房间</div>
+      <div class="form-group">
+        <label>房间名称</label>
+        <input name="roomName" placeholder="请输入房间名称" />
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-primary" onclick="createRoom()">保存</button>
+        <button class="btn btn-secondary" onclick="hideRoomCreate()">取消</button>
+      </div>
+    </div>
+
+    <div id="room-detail" class="detail-pane" data-testid="room-detail" style="display:none;">
+      <div class="detail-title">房间详情</div>
+      <div class="detail-meta">房间已创建</div>
+    </div>
+  </section>
+
+  <!-- ============ Hub Panel ============ -->
+  <section id="panel-hubs" class="panel">
+    <h1>Hub 管理</h1>
+    <p class="subtitle">管理集成与扩展</p>
+
+    <div class="list-section">
+      <div class="list-header">
+        <div class="list-title">Hub 列表</div>
+        <button class="btn-create" onclick="showHubCreate()">+ 新建 Hub</button>
+      </div>
+      <div class="list-container hub-list" role="list" data-testid="hub-list">
+        <div class="list-item hub-item" role="listitem" data-id="hub-1">
+          <div>
+            <div class="item-name">OpenCSG Hub</div>
+            <div class="item-desc">官方默认集成中心</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="hub-create-form" style="display:none; margin-top:24px;">
+      <div class="list-title" style="margin-bottom:16px;">创建新 Hub</div>
+      <div class="form-group">
+        <label>Hub 名称</label>
+        <input name="hubName" placeholder="请输入 Hub 名称" />
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-primary" onclick="createHub()">保存</button>
+        <button class="btn btn-secondary" onclick="hideHubCreate()">取消</button>
+      </div>
+    </div>
+
+    <div id="hub-detail" class="detail-pane" data-testid="hub-detail" style="display:none;">
+      <div class="detail-title">Hub 详情</div>
+      <div class="detail-meta">Hub 已创建</div>
+    </div>
+  </section>
+
+  <!-- ============ Computer Workspace Panel ============ -->
+  <section id="panel-computer" class="panel">
+    <h1>计算机工作区</h1>
+    <p class="subtitle">本地工作空间状态</p>
+
+    <div class="detail-pane" data-testid="computer-detail">
+      <div class="detail-title">工作区信息</div>
+      <div class="detail-meta" style="margin:12px 0;">
+        <div style="margin-bottom:8px;">状态: <span class="status-pill" role="status" data-testid="status-indicator">在线</span></div>
+        <div style="margin-top:8px;">工作区路径: <span class="workspace-path" data-testid="workspace-path">C:/Users/Donot/Desktop/ui_auto_testing</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Humans Panel ============ -->
+  <section id="panel-humans" class="panel">
+    <h1>用户管理</h1>
+    <p class="subtitle">管理系统用户</p>
+
+    <div class="list-section">
+      <div class="list-header">
+        <div class="list-title">用户列表</div>
+        <button class="btn-create" onclick="showHumanCreate()">+ 新建用户</button>
+      </div>
+      <div class="list-container human-list" role="list" data-testid="human-list">
+        <div class="list-item" role="listitem">
+          <div>
+            <div class="item-name">管理员</div>
+            <div class="item-desc">系统管理员</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="human-create-form" style="display:none; margin-top:24px;">
+      <div class="list-title" style="margin-bottom:16px;">创建新用户</div>
+      <div class="form-group">
+        <label>用户名称</label>
+        <input name="userName" placeholder="请输入用户名称" />
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-primary" onclick="createHuman()">保存</button>
+        <button class="btn btn-secondary" onclick="hideHumanCreate()">取消</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal">
+    <div class="modal-title">确认删除</div>
+    <div class="modal-body">确定要删除这个智能体吗？此操作无法撤销。</div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeDeleteModal()">取消</button>
+      <button class="btn btn-danger" onclick="confirmDeleteOk()">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Navigation switching
+  const navLinks = document.querySelectorAll('nav[role="navigation"] a');
+  navLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const panelId = link.getAttribute('data-panel');
+      navLinks.forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel-' + panelId).classList.add('active');
+    });
+  });
+
+  // Agent CRUD
+  function showAgentCreate() {
+    document.getElementById('agent-create-form').style.display = 'block';
+  }
+  function hideAgentCreate() {
+    document.getElementById('agent-create-form').style.display = 'none';
+  }
+  function createAgent() {
+    const name = document.querySelector('#agent-create-form input[name="name"]').value;
+    const desc = document.querySelector('#agent-create-form textarea[name="description"]').value;
+    if (!name.trim()) { alert('请输入名称'); return; }
+    const list = document.querySelector('.agent-list[role="list"]');
+    const id = 'agent-' + Date.now();
+    const item = document.createElement('div');
+    item.className = 'list-item agent-item';
+    item.setAttribute('role', 'listitem');
+    item.setAttribute('data-id', id);
+    item.addEventListener('click', function(e) {
+      if (!e.target.closest('.action-btn')) viewAgent(id);
+    });
+    item.innerHTML = `
+      <div>
+        <div class="item-name">${name}</div>
+        <div class="item-desc">${desc || '暂无描述'}</div>
+      </div>
+      <div class="item-actions">
+        <button class="action-btn edit-btn" aria-label="编辑" onclick="viewAgent('${id}')">查看</button>
+        <button class="action-btn delete delete-btn" aria-label="删除" onclick="confirmDelete('${id}')">删除</button>
+      </div>
+    `;
+    list.appendChild(item);
+    document.querySelector('#agent-create-form input[name="name"]').value = '';
+    document.querySelector('#agent-create-form textarea[name="description"]').value = '';
+    hideAgentCreate();
+  }
+  function viewAgent(id) {
+    const item = document.querySelector(`[data-id="${id}"]`);
+    const name = item.querySelector('.item-name').textContent;
+    const desc = item.querySelector('.item-desc').textContent;
+    const detail = document.getElementById('agent-detail');
+    detail.style.display = 'block';
+    document.getElementById('agent-detail-content').innerHTML = `名称: ${name}<br/>描述: ${desc}<br/>状态: 运行中`;
+  }
+
+  let pendingDeleteId = null;
+  function confirmDelete(id) {
+    pendingDeleteId = id;
+    document.getElementById('delete-modal').classList.add('show');
+  }
+  function closeDeleteModal() {
+    document.getElementById('delete-modal').classList.remove('show');
+    pendingDeleteId = null;
+  }
+  function confirmDeleteOk() {
+    if (pendingDeleteId) {
+      const item = document.querySelector(`[data-id="${pendingDeleteId}"]`);
+      if (item) item.remove();
+    }
+    closeDeleteModal();
+  }
+
+  // 为所有列表项添加默认点击事件（兼容 Selenium 点击元素中心位置）
+  document.querySelectorAll('#panel-agents .agent-item').forEach(function(item) {
+    item.addEventListener('click', function(e) {
+      if (!e.target.closest('.action-btn')) {
+        var id = item.getAttribute('data-id');
+        if (id) viewAgent(id);
+      }
+    });
+  });
+  document.querySelectorAll('#panel-rooms .room-item').forEach(function(item) {
+    item.addEventListener('click', function(e) {
+      if (!e.target.closest('.action-btn')) {
+        var id = item.getAttribute('data-id');
+        if (id) viewRoom(id);
+      }
+    });
+  });
+  document.querySelectorAll('#panel-hubs .hub-item').forEach(function(item) {
+    item.addEventListener('click', function(e) {
+      if (!e.target.closest('.action-btn')) {
+        var id = item.getAttribute('data-id');
+        if (id) viewHub(id);
+      }
+    });
+  });
+
+  // Room CRUD
+  function showRoomCreate() {
+    document.getElementById('room-create-form').style.display = 'block';
+  }
+  function hideRoomCreate() {
+    document.getElementById('room-create-form').style.display = 'none';
+  }
+  function createRoom() {
+    const name = document.querySelector('#room-create-form input[name="roomName"]').value;
+    if (!name.trim()) { alert('请输入房间名称'); return; }
+    const list = document.querySelector('.room-list[role="list"]');
+    const id = 'room-' + Date.now();
+    const item = document.createElement('div');
+    item.className = 'list-item room-item';
+    item.setAttribute('role', 'listitem');
+    item.setAttribute('data-id', id);
+    item.addEventListener('click', function(e) {
+      if (!e.target.closest('.action-btn')) viewRoom(id);
+    });
+    item.innerHTML = `
+      <div>
+        <div class="item-name">${name}</div>
+        <div class="item-desc">新建房间</div>
+      </div>
+    `;
+    list.appendChild(item);
+    document.querySelector('#room-create-form input[name="roomName"]').value = '';
+    hideRoomCreate();
+    document.getElementById('room-detail').style.display = 'block';
+  }
+
+  function viewRoom(id) {
+    var item = document.querySelector('#panel-rooms [data-id="' + id + '"]');
+    if (!item) return;
+    var name = item.querySelector('.item-name').textContent;
+    var desc = item.querySelector('.item-desc').textContent;
+    var detail = document.getElementById('room-detail');
+    detail.style.display = 'block';
+    detail.querySelector('.detail-meta').innerHTML = '名称: ' + name + '<br/>描述: ' + desc + '<br/>状态: 运行中';
+  }
+
+  // Hub CRUD
+  function showHubCreate() {
+    document.getElementById('hub-create-form').style.display = 'block';
+  }
+  function hideHubCreate() {
+    document.getElementById('hub-create-form').style.display = 'none';
+  }
+  function createHub() {
+    const name = document.querySelector('#hub-create-form input[name="hubName"]').value;
+    if (!name.trim()) { alert('请输入 Hub 名称'); return; }
+    const list = document.querySelector('.hub-list[role="list"]');
+    const id = 'hub-' + Date.now();
+    const item = document.createElement('div');
+    item.className = 'list-item hub-item';
+    item.setAttribute('role', 'listitem');
+    item.setAttribute('data-id', id);
+    item.addEventListener('click', function(e) {
+      if (!e.target.closest('.action-btn')) viewHub(id);
+    });
+    item.innerHTML = `
+      <div>
+        <div class="item-name">${name}</div>
+        <div class="item-desc">新建 Hub</div>
+      </div>
+    `;
+    list.appendChild(item);
+    document.querySelector('#hub-create-form input[name="hubName"]').value = '';
+    hideHubCreate();
+    document.getElementById('hub-detail').style.display = 'block';
+  }
+
+  function viewHub(id) {
+    var item = document.querySelector('#panel-hubs [data-id="' + id + '"]');
+    if (!item) return;
+    var name = item.querySelector('.item-name').textContent;
+    var desc = item.querySelector('.item-desc').textContent;
+    var detail = document.getElementById('hub-detail');
+    detail.style.display = 'block';
+    detail.querySelector('.detail-meta').innerHTML = '名称: ' + name + '<br/>描述: ' + desc + '<br/>状态: 运行中';
+  }
+
+  // Human CRUD
+  function showHumanCreate() {
+    document.getElementById('human-create-form').style.display = 'block';
+  }
+  function hideHumanCreate() {
+    document.getElementById('human-create-form').style.display = 'none';
+  }
+  function createHuman() {
+    const name = document.querySelector('#human-create-form input[name="userName"]').value;
+    if (!name.trim()) { alert('请输入用户名称'); return; }
+    const list = document.querySelector('.human-list[role="list"]');
+    const item = document.createElement('div');
+    item.className = 'list-item';
+    item.setAttribute('role', 'listitem');
+    item.innerHTML = `
+      <div>
+        <div class="item-name">${name}</div>
+        <div class="item-desc">新建用户</div>
+      </div>
+    `;
+    list.appendChild(item);
+    document.querySelector('#human-create-form input[name="userName"]').value = '';
+    hideHumanCreate();
+  }
+
+  // Chat functionality
+  function createNewRoom() {
+    const list = document.querySelector('.message-list[role="log"]');
+    list.innerHTML = '<div class="message-item agent-message" role="article" data-testid="agent-message">新房间已创建，开始对话吧！</div>';
+  }
+
+  function sendMessage() {
+    const textarea = document.querySelector('.input-area textarea[name="message"]');
+    const message = textarea.value.trim();
+    if (!message) return;
+
+    const list = document.querySelector('.message-list[role="log"]');
+
+    // User message
+    const userMsg = document.createElement('div');
+    userMsg.className = 'message-item user-message';
+    userMsg.setAttribute('role', 'article');
+    userMsg.setAttribute('data-testid', 'user-message');
+    userMsg.textContent = message;
+    list.appendChild(userMsg);
+
+    textarea.value = '';
+
+    // Typing indicator
+    const typing = document.getElementById('typing-indicator');
+    typing.style.display = 'block';
+
+    // Simulate AI response
+    setTimeout(() => {
+      typing.style.display = 'none';
+      const aiMsg = document.createElement('div');
+      aiMsg.className = 'message-item agent-message';
+      aiMsg.setAttribute('role', 'article');
+      aiMsg.setAttribute('data-testid', 'agent-message');
+      aiMsg.textContent = '收到你的消息: "' + message + '"。这是一个模拟回复。';
+      list.appendChild(aiMsg);
+      list.scrollTop = list.scrollHeight;
+    }, 800);
+
+    list.scrollTop = list.scrollHeight;
+  }
+
+  // Enter key to send
+  document.querySelectorAll('textarea[name="message"]').forEach(ta => {
+    ta.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
